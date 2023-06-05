@@ -59,18 +59,18 @@ plot(p, dbeta(p, 5, 40), col = 2, lwd = 2, main = 'Beta(5, 40)', type = 'l')
 # 3. Density plots of posteriors
 
 # data
-n = 20; p1 = 0.05 # Binomial likelihood parameters
+n = 20; p1 = 0.8 # Binomial likelihood parameters
 p <- seq(0,1,by=0.001)
 
 # priors
-alpha1 = 1; beta1 = 19
+alpha1 = 8; beta1 = 2
 prior_mean = alpha1 / (alpha1 + beta1) # [1] 0.05
 prior_variance = (alpha1*beta1) / ((alpha1 + beta1)^2 * (alpha1 + beta1 + 1))
 prior1 = p^(alpha1 - 1) * (1-p)^(beta1-1) ; prior1 = prior1 / sum(prior1)
 
 # likelihood
 set.seed(2023)
-data1 = rbinom(n = n, size = 20, prob = p1)
+data1 = rbinom(n = n, size = 1, prob = p1)
 likelihood1 = dbinom(x = p1*n, size = 20, prob = p)
 
 # posterior
@@ -83,23 +83,20 @@ write.csv(data1,
           row.names = FALSE)
 
 # posterior mean and parameters
-meandata1 = mean(data1) # [1] 0.85
-alpha_posterior = ((alpha1 + n*mean(data1))) # 18
-beta_posterior = (n - n*mean(data1) + beta1) # 22
+meandata1 = mean(data1) # [1] 0.8
+alpha_posterior = ((alpha1 + n*mean(data1))) # 24
+beta_posterior = (n - n*mean(data1) + beta1) # 6
 
 
 # ggplot
 
 # data
-n = 20; p1 = 0.05 # Binomial likelihood parameters
+n = 20; p1 = 0.8 # Binomial likelihood parameters
 
 # priors
-alpha1 = 1; beta1 = 19
+alpha1 = 8; beta1 = 2
 p <- seq(0,1,by=0.001)
 prior1 = p^(alpha1 - 1) * (1-p)^(beta1-1) ; prior1 = prior1 / sum(prior1)
-
-# data
-n = 20; p1 = 0.05 # Binomial likelihood parameters
 
 # likelihood
 likelihood1 = dbinom(x = p1*n, size = 20, prob = p)
@@ -111,15 +108,15 @@ lp1 = likelihood1 * prior1 ; posterior1 = lp1 / sum(lp1)
 data_frame <- data.frame('p' = p, 'prior' = prior1, 'likelihood' = likelihood1, 'posterior' = posterior1)
 
 ggplot(data=data_frame) +
-  geom_line(aes(x = p, y = prior1, color = 'Be(1, 19) prior'), lwd = 1.2) +
+  geom_line(aes(x = p, y = prior1, color = 'Be(8, 2) prior'), lwd = 1.2) +
   geom_line(aes(x = p, y = likelihood1/sum(likelihood1), 
-                color = 'Scaled likelihood Bin(20, 0.05)'), lwd = 1.2) +
-  geom_line(aes(x = p, y = posterior1, color = 'Be(18, 22) posterior'), lwd = 1.2) +
-  xlim(0, 0.5) + ylim(0, max(c(prior1, posterior1, likelihood1 / sum(likelihood1)))) +
-  scale_color_manual(name = "Distributions", values = c("Be(1, 19) prior" = "darkred", 
-                                                        "Scaled likelihood Bin(20, 0.05)" = "black",
-                                                        'Be(18, 22) posterior' = 'darkblue')) +
-  labs(title = 'Posterior distribution in blue - Be(18, 22)',
+                color = 'Scaled likelihood Bin(20, 0.8)'), lwd = 1.2) +
+  geom_line(aes(x = p, y = posterior1, color = 'Be(24, 6) posterior'), lwd = 1.2) +
+  xlim(0, 1) + ylim(0, max(c(prior1, posterior1, likelihood1 / sum(likelihood1)))) +
+  scale_color_manual(name = "Distributions", values = c("Be(8, 2) prior" = "darkred", 
+                                                        "Scaled likelihood Bin(20, 0.8)" = "black",
+                                                        'Be(24, 6) posterior' = 'darkblue')) +
+  labs(title = 'Posterior distribution in blue - Be(24,6)',
        subtitle = 'Working example data',
        y="density", x="p") +
   theme(axis.text=element_text(size=8),
@@ -129,29 +126,60 @@ ggplot(data=data_frame) +
         panel.grid.major = element_line(colour = "grey90"))
 
 # Posterior mean, posterior variance and 95% Credible Interval including the sample median
-set.seed(2023)
-data1 = rbinom(100000, size = n, prob = p1)
-alpha_posterior = ((alpha1 + n*mean(data1))) # 19
-beta_posterior = (n - n*mean(data1) + beta1) # 41
+xbar = p1
+alpha_prior = 2; beta_prior = 8
+alpha_posterior = ((alpha1 + n*mean(data1))) # 24
+beta_posterior = (n - n*mean(data1) + beta1) # 6
 
 pmean = alpha_posterior / (alpha_posterior + beta_posterior)
 pmean
-# [1] 0.45
+# [1] 0.8
 
 pvariance = (alpha_posterior *beta_posterior) / ((alpha_posterior + beta_posterior)^2 + (alpha_posterior + beta_posterior + 1) )
 pvariance
-# [1] 0.2413163
+# [1] 0.1546724
 
 # 95% Cedible Interval obtained by direct sampling (simulation)
 set.seed(2023)
 round(quantile(rbeta(n = 10^8, alpha_posterior, beta_posterior), probs = c(0.025, 0.5, 0.975)),4)
 #   2.5%    50%  97.5% 
-# 0.3009 0.4492 0.6038 
+# 0.6423 0.8067 0.9201 
 
 # Posterior mean obtained from direct sampling
 set.seed(2023)
 mean(rbeta(n = 10^8, alpha_posterior, beta_posterior))
-# [1] 0.4500023
+# [1] 0.7999991
+
+
+# Jeffrey's prior
+
+seq=seq(from = 0, to = 1, by = 0.01)
+q=dbeta(seq, 1/2, 1/2)
+
+df=data.frame(seq,q)
+ggplot(df, aes(seq)) +              
+  geom_line(aes(y=q), colour="red3", size = 1.5) + 
+  xlab("theta ")+ylab("density")+
+  geom_hline(yintercept=1, size = 1.5) +
+  xlim(0, 1)+ ylim(0, 5) +
+  geom_text(x=0.7, y=4, label="Beta(1/2, 1/2)", size = 6)+
+  labs(title = 'Jeffreys Beta prior',
+       subtitle = 'in red Beta(1/2, 1/2) prior for a Binomial likelihood',
+       y="density", x="p") +
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=8),
+        plot.subtitle=element_text(size=10, face="italic", color="darkred"),
+        panel.background = element_rect(fill = "white", colour = "grey50"),
+        panel.grid.major = element_line(colour = "grey90"))
+
+# posterior mean
+mean(rbeta(n=100000000, shape1 = 16.5, shape2 = 4.5))
+# 0.7857248
+
+# credible interval
+quantile(rbeta(n=100000000, shape1 = 16.5, shape2 = 4.5), probs = c(0.025, 0.975))
+#      2.5%     97.5% 
+# 0.5917689 0.9284637 
 
 #----
 # end
